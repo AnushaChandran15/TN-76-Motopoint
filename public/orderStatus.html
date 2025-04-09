@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sales Order Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+    }
+    h2 {
+      color: #2c3e50;
+    }
+    .order-details p {
+      margin: 6px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #f8f8f8;
+    }
+    .label {
+      font-weight: bold;
+    }
+    .button{
+      display: none;
+      padding: 10px 20px; 
+      margin-right: 10px;
+      border: 1px solid #2c3e50;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Order Summary</h2>
+  <div class="order-details" id="orderDetails">
+    Loading...
+  </div>
+
+  <h2>Ordered Items</h2>
+  <table id="productsTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Product Name</th>
+        <th>Quantity</th>
+        <th>Unit Price (₹)</th>
+        <th>Total (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div style="margin-top: 20px;">
+    <button id="return-btn" class="button">Return</button>
+    <button id="cancel-btn" class="button" style="background-color: red; color: white;">Cancel</button>
+  </div>
+
+  <script>
+    const returnBtn = document.getElementById("return-btn")
+    const cancelBtn = document.getElementById("cancel-btn")
+    const cancelBtnShowingStates = ['Order Placed', 'Out for Delivery', 'Order Shipped', 'Ready to Ship', 'Rescheduled']
+    const params = new URLSearchParams(window.location.search);
+    const salesOrderId = params.get("id");
+
+    fetch(`/salesOrder/${salesOrderId}`)
+      .then(res => res.json())
+      .then(response => {
+        const order = response.data[0];
+        const orderDetailsDiv = document.getElementById("orderDetails");
+        const nextTransitions = response.nextTransitions
+        
+        returnBtn.onclick = () => handleReturn(nextTransitions)
+        cancelBtn.onclick = () => handleCancel(nextTransitions)
+
+        orderDetailsDiv.innerHTML = `
+          <p><span class="label">SO Number:</span> ${order.SO_Number}</p>
+          <p><span class="label">Subject:</span> ${order.Subject}</p>
+          <p><span class="label">Contact:</span> ${order.Contact_Name?.name || 'N/A'}</p>
+          <p><span class="label">Status:</span> ${order.Status}</p>
+          <p><span class="label">Total:</span> ₹${order.Grand_Total}</p>
+          <p><span class="label">Shipping:</span> ${order.Shipping_Street}, ${order.Shipping_City}, ${order.Shipping_State}, ${order.Shipping_Country}</p>
+          <p><span class="label">Return before:</span> ${order.Return_Deadline || 'N/A'}</p>
+        `;
+
+        const tbody = document.querySelector("#productsTable tbody");
+        tbody.innerHTML = "";
+
+        order.Ordered_Items.forEach((item, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${item.Product_Name.name}</td>
+            <td>${item.Quantity}</td>
+            <td>₹${item.List_Price}</td>
+            <td>₹${item.Total}</td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        const totalRow = document.createElement("tr");
+        totalRow.innerHTML = `
+          <td colspan="4" style="text-align: right; font-weight: bold;">Grand Total</td>
+          <td style="font-weight: bold;">₹${order.Grand_Total}</td>
+        `;
+        tbody.appendChild(totalRow);
+
+        if(order.Status == "Delivered")
+        {
+          returnBtn.style.display = "block"
+        }
+        if(cancelBtnShowingStates.includes(order.Status))
+        {
+           cancelBtn.style.display = "block"
+        }
+      })
+      .catch(err => {
+        document.getElementById("orderDetails").innerHTML = "<p style='color:red;'>Failed to load order.</p>";
+        console.error("Error loading order:", err);
+      });
+
+      async function handleReturn(nextTransitions)
+      {
+        const returnTransition = nextTransitions.find(t => t.name == 'Return')
+        const transitionId = returnTransition.id
+
+        if(returnTransition.fields.length != 0)
+        {
+          const fields = returnTransition.fields
+          const returnReason = prompt(fields[0].content)
+          if (returnReason !== null) {
+            const transitionData = {
+              blueprint:{
+                transition_id: transitionId,
+                data:{
+                  Notes: returnReason
+                }
+              }
+            }
+            updateTransition({...transitionData, salesOrderId})
+          }
+        }
+      }
+
+      function handleCancel(nextTransitions)
+      {
+        const cancelTransition = nextTransitions.find(t => t.name == 'Cancel')
+        const transitionId = cancelTransition.id
+        const transitionData = {
+              blueprint:{
+                transition_id: transitionId
+              }
+        }
+        updateTransition({...transitionData, salesOrderId})
+      }
+
+      async function updateTransition(data)
+      {
+        const response = await fetch('/performTransition', {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(data)
+            })
+            const result = await response.json()
+            console.log(result)
+            if(result.code == 'SUCCESS')
+            {
+              window.location.reload()
+            }
+      }
+  </script>
+  <script type="text/javascript">var $zoho=$zoho || {};$zoho.salesiq = $zoho.salesiq || {widgetcode:"siq8889745c4cfee5f31283a6e34dc9524b52f978e17c9385387afa3daa0627e193", values:{},ready:function(){}};var d=document;s=d.createElement("script");s.type="text/javascript";s.id="zsiqscript";s.defer=true;s.src="https://salesiq.localzoho.com/widget";t=d.getElementsByTagName("script")[0];t.parentNode.insertBefore(s,t);</script>
+</body>
+</html>

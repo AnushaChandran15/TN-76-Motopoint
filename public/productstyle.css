@@ -1,0 +1,75 @@
+body {
+    font-family: sans-serif;
+    padding: 20px;
+  }
+
+  .input-group {
+    margin-bottom: 20px;
+  }
+
+  .card , .cartItem{
+    position: relative;
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    max-width: 100%;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  .cartItem{
+    gap: 16px;
+  }
+
+  .card img , .cartItem img{
+    width: 50%;
+    max-height: 500px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin-bottom: 15px;
+  }
+  .cartItem{
+    margin-bottom: 10px;
+  }
+  .cartItem img{
+    width: 50px;
+    height: 50px;
+  }
+  .cartItem h2{
+    margin: 0;
+    font-size: 1em;
+  }
+
+  .cartItem p {
+    margin: 10px 0;
+  }
+
+  .card h2 {
+    margin: 0;
+    font-size: 2.5em;
+  }
+
+  .card p {
+    margin: 20px 0;
+  }
+
+  .card .buttons{
+    margin-top: 20px; 
+    display: flex; 
+    gap: 10px;
+  }
+
+  .button{
+    flex: 1; 
+    padding: 10px;
+  }
+  .remove-btn{
+    position: absolute;
+    right: 10px;
+    font-size: 24px; 
+    align-self: center;
+    background: none; 
+    border: none; 
+    color: red; 
+    cursor: pointer;
+  }
