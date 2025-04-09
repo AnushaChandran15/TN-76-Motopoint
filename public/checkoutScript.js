@@ -92,7 +92,7 @@ async function getCartItems() {
     form.appendChild(placeOrderBtn);
 
     form.onsubmit = (e) => {
-        e.preventDefault();
+        e.preventDefault()
         const formData = new FormData(form);
 
         const customer = {
@@ -116,7 +116,14 @@ async function getCartItems() {
             }
         }
 
-        placeOrder({ customer, items: orderItems });
+        if(orderItems.length > 0)
+        {
+            placeOrder({ customer, items: orderItems })
+        }
+        else {
+            alert("Your cart is empty")
+            window.location.href = '/'
+        }
     };
     const heading = document.createElement('h3')
     heading.textContent = "Products"
